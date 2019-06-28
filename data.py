@@ -44,12 +44,17 @@ class Data(object):
         self.target_vocab_size = len(self.TARGET.vocab)
         self.data_iter = BucketIterator(self.dataset, batch_size=self.batch_size, shuffle=True, device=self.DEVICE)
 
-    def process(self, text, return_length=False):
-        encoder_input, encoder_length = self.ENCODER.process([self.ENCODER.preprocess(text)])
+    def process(self, text, return_length=False, go=None, eos=None):
+        tokens = self.ENCODER.preprocess(text)
+        if go:
+            tokens.insert(0, "<go>")
+        if eos:
+            tokens.append("<eos>")
+        encoder_input, encoder_length = self.ENCODER.process([tokens])
         if return_length:
-            return encoder_input, encoder_length
+            return encoder_input.to(self.DEVICE), encoder_length.to(self.DEVICE)
         else:
-            return encoder_input
+            return encoder_input.to(self.DEVICE)
 
     def logist2word(self, logist, topn=1):
         ids = logist.view(-1).argsort(descending=True)

@@ -5,11 +5,16 @@ import torch.nn.functional as F
 from network import Model
 import numpy as np
 import config
+import random
 import glob
 import re
 import os
+import matplotlib.pyplot as plt
+import seaborn as sns
+from matplotlib.font_manager import FontProperties
 FILE_PATH = os.path.dirname(os.path.abspath(__file__))
 VEC_PATH = FILE_PATH + '/data/word2vec.txt'
+myfont = FontProperties(fname=FILE_PATH + "/data/SimHei.ttf")
 
 
 def train(dataset, learning_rate, total_epoch, device, save_epoch=5, log_step=100, test_epoch=1):
@@ -123,3 +128,38 @@ def test(dataset, net, encoder_input, encoder_length, decoder_input, decoder_len
     print("target目标:", target)
     print("预测结果:", prediction)
     print("attention:\n", net.attn.attention[0, :, :, 0])
+
+
+def attention_visualization(dataset, net, input_sentence, output_sentence=None):
+    s = []
+    attention = []
+    encoder_input = dataset.process(input_sentence)
+    tokens = dataset.ENCODER.preprocess(input_sentence)
+    if output_sentence:
+        output_sentence = dataset.ENCODER.preprocess(output_sentence) + ["<eos>"]
+    output = net.predict(encoder_input)
+    attention.append(net.attn.attention.cpu().view(1, -1).detach().numpy())
+    word = dataset.logist2word(output)[0]
+    if word[0] in dataset.itos[:20]:
+        word = dataset.logist2word(output, topn=3)
+        word = random.choice(word)
+    if output_sentence:
+        word = output_sentence[len(s)]
+    next_input = dataset.stoi[word]
+    s.append(word)
+    while word != "<eos>":
+        output = net.next(next_input)
+        word = dataset.logist2word(output)[0]
+        if output_sentence:
+            word = output_sentence[len(s)]
+        next_input = dataset.stoi[word]
+        s.append(word)
+        attention.append(net.attn.attention.cpu().view(1, -1).detach().numpy())
+    attention = np.concatenate(attention[:-1])
+    s = s[:-1]
+    f, ax = plt.subplots(figsize=(16, 8))
+    sns.heatmap(attention, square=True, vmax=0.5, cmap="Reds")
+    ax.set_xticklabels(tokens, fontsize=20, fontproperties=myfont)
+    ax.xaxis.set_ticks_position('top')
+    ax.set_yticklabels(s, fontsize=30, rotation=0, fontproperties=myfont)
+    plt.show()
