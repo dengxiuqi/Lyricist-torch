@@ -17,7 +17,8 @@ VEC_PATH = FILE_PATH + '/data/word2vec.txt'
 myfont = FontProperties(fname=FILE_PATH + "/data/SimHei.ttf")
 
 
-def train(dataset, learning_rate, total_epoch, device, save_epoch=5, log_step=100, test_epoch=1):
+def train(dataset, learning_rate, total_epoch, device=None, save_epoch=5, log_step=100, test_epoch=1):
+    device = device or torch.device("cuda" if torch.cuda.is_available() else "cpu")
     net = model(dataset, device=device)
     model_name = dataset.singer or "pre_trained"
     pre_trained_model = check_pre_trained_model()
@@ -72,13 +73,14 @@ def train(dataset, learning_rate, total_epoch, device, save_epoch=5, log_step=10
 
 
 def model(dataset, model_name=None, device=None, train=True):
+    device = device or torch.device("cuda" if torch.cuda.is_available() else "cpu")
     net = Model(vocab_size=dataset.vocab_size, embedding_dim=config.embedding_dim,
                 output_size=dataset.target_vocab_size,
                 encoder_hidden_size=config.encoder_hidden_size, decoder_hidden_size=config.decoder_hidden_size,
                 encoder_layers=config.encoder_layers, decoder_layers=config.decoder_layers,
                 dropout=config.dropout, embedding_weights=dataset.vector_weights, device=device)
     if model_name:
-        pre_trained_state_dict = torch.load(FILE_PATH + config.model_path + model_name)
+        pre_trained_state_dict = torch.load(FILE_PATH + config.model_path + model_name, map_location=device)
         state_dict = net.state_dict()
         state_dict.update(pre_trained_state_dict)
         net.load_state_dict(state_dict)
