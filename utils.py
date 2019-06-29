@@ -132,7 +132,7 @@ def test(dataset, net, encoder_input, encoder_length, decoder_input, decoder_len
     print("attention:\n", net.attn.attention[0, :, :, 0])
 
 
-def attention_visualization(dataset, net, input_sentence, output_sentence=None):
+def attention_visualization(dataset, net, input_sentence, output_sentence=None, figsize=None, file_name=None):
     s = []
     attention = []
     encoder_input = dataset.process(input_sentence)
@@ -159,9 +159,14 @@ def attention_visualization(dataset, net, input_sentence, output_sentence=None):
         attention.append(net.attn.attention.cpu().view(1, -1).detach().numpy())
     attention = np.concatenate(attention[:-1])
     s = s[:-1]
-    f, ax = plt.subplots(figsize=(16, 8))
-    sns.heatmap(attention, square=True, vmax=0.5, cmap="Reds")
+    if figsize:
+        f, ax = plt.subplots(figsize=figsize)
+    else:
+        f, ax = plt.subplots()
+    sns.heatmap(attention, square=True, vmax=0.5, cmap="Reds", cbar=False)
     ax.set_xticklabels(tokens, fontsize=20, fontproperties=myfont)
     ax.xaxis.set_ticks_position('top')
     ax.set_yticklabels(s, fontsize=30, rotation=0, fontproperties=myfont)
+    if file_name:
+        plt.savefig(FILE_PATH + "/images/" + file_name)
     plt.show()
