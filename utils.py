@@ -17,7 +17,17 @@ VEC_PATH = FILE_PATH + '/data/word2vec.txt'
 myfont = FontProperties(fname=FILE_PATH + "/data/SimHei.ttf")
 
 
-def train(dataset, learning_rate, total_epoch, device=None, save_epoch=5, log_step=100, test_epoch=1):
+def train(dataset, learning_rate, total_epoch, device=None, save_epoch=5, log_step=100, check_epoch=1):
+    """
+    训练
+    :param dataset: data.py中的Data/Lyric对象
+    :param learning_rate: 学习率
+    :param total_epoch: 训练的总轮数
+    :param device: "cpu"/"cuda"
+    :param save_epoch: 保存模型的周期
+    :param log_step: 打印训练log的步数
+    :param check_epoch: 用check方法查看训练效果的周期
+    """
     device = device or torch.device("cuda" if torch.cuda.is_available() else "cpu")
     net = model(dataset, device=device)
     model_name = dataset.singer or "pre_trained"
@@ -68,11 +78,12 @@ def train(dataset, learning_rate, total_epoch, device=None, save_epoch=5, log_st
                 if step > 0:
                     print("epoch", epoch, "step", step, "loss:", total_loss / log_step)
                     total_loss = 0
-                elif step == 0 and epoch % test_epoch == 0:
-                    test(dataset, net, encoder_input, encoder_length, decoder_input, decoder_length, target)
+                elif step == 0 and epoch % check_epoch == 0:
+                    check(dataset, net, encoder_input, encoder_length, decoder_input, decoder_length, target)
 
 
 def model(dataset, model_name=None, device=None, train=True):
+    """加载模型"""
     device = device or torch.device("cuda" if torch.cuda.is_available() else "cpu")
     net = Model(vocab_size=dataset.vocab_size, embedding_dim=config.embedding_dim,
                 output_size=dataset.target_vocab_size,
@@ -89,6 +100,7 @@ def model(dataset, model_name=None, device=None, train=True):
 
 
 def state_dict_without_embedding(net):
+    """在保存和加载网络模型时要去掉庞大的embedding, 因为它是通过word2vec格式保存"""
     state_dict = net.state_dict()
     for s in state_dict.copy().keys():
         if "embedding" in s:
@@ -97,6 +109,7 @@ def state_dict_without_embedding(net):
 
 
 def check_pre_trained_model():
+    """检查最近一次保存的pre-trained model"""
     if not os.path.exists(FILE_PATH + config.model_path):
         os.mkdir(FILE_PATH + config.model_path)
         print("path '%s' doesn't exist, create it." % config.model_path)
@@ -111,7 +124,8 @@ def check_pre_trained_model():
         return "pre_trained_%d.pkl" % max_epoch
 
 
-def test(dataset, net, encoder_input, encoder_length, decoder_input, decoder_length, target):
+def check(dataset, net, encoder_input, encoder_length, decoder_input, decoder_length, target):
+    """在train阶段随机显示一条语料的输入、输出, 方便了解网络效果"""
     sample = np.random.randint(encoder_input.shape[0])
     encoder_input = encoder_input[sample: sample + 1]
     encoder_length = encoder_length[sample: sample + 1]
@@ -133,6 +147,15 @@ def test(dataset, net, encoder_input, encoder_length, decoder_input, decoder_len
 
 
 def attention_visualization(dataset, net, input_sentence, output_sentence=None, figsize=None, file_name=None):
+    """
+    注意力可视化
+    :param dataset: data.py中的Data/Lyric对象
+    :param net: network.py中的Model对象
+    :param input_sentence: encoder文本, list格式, list的元素为str格式
+    :param output_sentence: decoder输入文本, list格式, list的元素为str格式, 默认为None
+    :param figsize: 图像大小
+    :param file_name: 图片保存的名称
+    """
     s = []
     attention = []
     encoder_input = dataset.process(input_sentence)
