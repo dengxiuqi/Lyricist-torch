@@ -29,56 +29,59 @@ def train(dataset, learning_rate, total_epoch, device=None, save_epoch=5, log_st
     :param check_epoch: 用check方法查看训练效果的周期
     """
     device = device or torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    net = model(dataset, device=device)
-    model_name = dataset.singer or "pre_trained"
-    pre_trained_model = check_pre_trained_model()
-    if pre_trained_model:
+    net = model(dataset, device=device)             # 构建网络
+    model_name = dataset.singer or "pre_trained"    # 如果没有指定某位歌手名, 就加载通用的pre-trained模型
+    pre_trained_model = check_pre_trained_model()   # 检查是否有已经训练过的模型
+    if pre_trained_model:                           # 如果有, 就加载
         pre_trained_state_dict = torch.load(FILE_PATH + config.model_path + pre_trained_model)
         state_dict = net.state_dict()
         state_dict.update(pre_trained_state_dict)
         net.load_state_dict(state_dict)
         if dataset.singer:
-            start_epoch = 0
+            start_epoch = 0                         # 如果指定了歌手(fine-tune), 就从第0轮开始训练
         else:
+            # 如果是预训练, 从预训练的轮次开始训练
             start_epoch = int(re.findall("\d+", pre_trained_model)[0])
     else:
         start_epoch = 0
-
+    # 设置loss的权重, <go>/<unk>/<pad>不会对损失有贡献
     loss_weight = torch.ones(dataset.target_vocab_size).to(device)
     loss_weight[dataset.stoi["<go>"]] = 0
     loss_weight[dataset.stoi["<unk>"]] = 0
     loss_weight[dataset.stoi["<pad>"]] = 0
-
+    # loss function
     criterion = nn.NLLLoss(reduction='mean', weight=loss_weight)
+    # optimizer
     optimizer = optim.Adam(net.parameters(), lr=learning_rate)
     net.train()
     for epoch in range(start_epoch, total_epoch):
-        total_loss = 0
-        if epoch % config.decay_epoch == 0:
+        total_loss = 0                              # 平均Loss
+        if epoch % config.decay_epoch == 0:         # loss衰减
             learning_rate = learning_rate * config.decay_rate
             print("current lr:", learning_rate)
             optimizer = optim.Adam(net.parameters(), lr=learning_rate)
-        if epoch % save_epoch == 0 and epoch > start_epoch:
-            torch.save(state_dict_without_embedding(net), FILE_PATH + config.model_path + model_name + '_%d.pkl' % epoch)
-        for step, batch in enumerate(dataset.data_iter):
+        if epoch % save_epoch == 0 and epoch > start_epoch:     # 保存模型
+            torch.save(state_dict_without_embedding(net),
+                       FILE_PATH + config.model_path + model_name + '_%d.pkl' % epoch)
+        for step, batch in enumerate(dataset.data_iter):        # 迭代
+            # 获取每个batch的输入、和目标
             encoder_input, encoder_length = batch.encoder
             decoder_input, decoder_length = batch.decoder
             target = batch.target
-
-            logists = net(encoder_input, encoder_length, decoder_input, decoder_length)
-            logists = F.log_softmax(logists, dim=2)
-
+            logists = net(encoder_input, encoder_length, decoder_input, decoder_length)     # 网络输出
+            logists = F.log_softmax(logists, dim=2)             # Log Softmax
             loss = criterion(logists.permute(0, 2, 1), target[:, :logists.shape[1]])
             optimizer.zero_grad()
             loss.backward()
-            nn.utils.clip_grad_norm_(net.parameters(), config.clip_grad)
+            nn.utils.clip_grad_norm_(net.parameters(), config.clip_grad)    # 防止梯度爆炸
             optimizer.step()
             total_loss += loss.cpu().data.numpy()
             if step % log_step == 0:
                 if step > 0:
-                    print("epoch", epoch, "step", step, "loss:", total_loss / log_step)
+                    print("epoch", epoch, "step", step, "loss:", total_loss / log_step)     # 显示平均Loss
                     total_loss = 0
                 elif step == 0 and epoch % check_epoch == 0:
+                    # 随机显示一条语料的输入、输出, 方便了解网络效果
                     check(dataset, net, encoder_input, encoder_length, decoder_input, decoder_length, target)
 
 
@@ -90,7 +93,7 @@ def model(dataset, model_name=None, device=None, train=True):
                 encoder_hidden_size=config.encoder_hidden_size, decoder_hidden_size=config.decoder_hidden_size,
                 encoder_layers=config.encoder_layers, decoder_layers=config.decoder_layers,
                 dropout=config.dropout, embedding_weights=dataset.vector_weights, device=device)
-    if model_name:
+    if model_name:  # 如果指定了模型名称, 就加载对应的模型
         pre_trained_state_dict = torch.load(FILE_PATH + config.model_path + model_name, map_location=device)
         state_dict = net.state_dict()
         state_dict.update(pre_trained_state_dict)
@@ -100,7 +103,7 @@ def model(dataset, model_name=None, device=None, train=True):
 
 
 def state_dict_without_embedding(net):
-    """在保存和加载网络模型时要去掉庞大的embedding, 因为它是通过word2vec格式保存"""
+    """在保存和加载网络模型时要去掉庞大的embedding, 因为它是通过word2vec格式保存, 不参与网络训练"""
     state_dict = net.state_dict()
     for s in state_dict.copy().keys():
         if "embedding" in s:

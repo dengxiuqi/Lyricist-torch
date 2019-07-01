@@ -135,17 +135,17 @@
     
 #### 工程
 Lyricist  
-├── data `数据集`   
- │　　├── songs.json `歌词数据`   
- │　　└── word2vec.txt `word2vec数据`    
-├── images `对注意力可视化的图片`   
-├── model `pre_trained和fine-tune模型`  
-├── test `用不同模型生成不同风格歌词`  
-├── config.py `数据集合网络结构的一些参数`  
-├── data.py `数据集处理, 基于torchtext`  
-├── finetune.py `微调`      
-├── pretrain.py `预训练`      
-└── utils.py　`工具函数` 　
+│── data 数据集   
+│　　│── songs.json 歌词数据   
+│　　\` ── word2vec.txt word2vec数据    
+│── images 对注意力可视化的图片   
+│── model pre_trained和fine-tune模型  
+│── test 用不同模型生成不同风格歌词  
+│── config.py 数据集合网络结构的一些参数  
+│── data.py 数据集处理, 基于torchtext  
+│── finetune.py 微调      
+│── pretrain.py 预训练      
+\` ── utils.py　工具函数  
 
 
 ##### Author

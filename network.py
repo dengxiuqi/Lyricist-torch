@@ -139,7 +139,7 @@ class Embedding(nn.Module):
                                           self.embedding_dim).from_pretrained(weights).to(self.device)
 
         for p in self.parameters():
-            p.requires_grad = False
+            p.requires_grad = False     # Embedding用的是预训练的Word2Vec, 不参与网络训练
 
     def forward(self, X):
         y = self.embedding(X)
