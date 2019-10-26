@@ -146,9 +146,3 @@ Lyricist
 │── finetune.py 微调      
 │── pretrain.py 预训练      
 \` ── utils.py　工具函数  
-
-
-##### Author
-欢迎交流  
-wechat:`dengxiuqi007`  
-2019.6
