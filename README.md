@@ -1,5 +1,7 @@
 # Lyricist
-### 基于Pytorch、Seq2Seq、注意力机制的 中文歌词生成研究, 按不同歌手风格生成歌词
+### 基于Pytorch、Seq2Seq、Luong注意力机制的 中文歌词生成研究, 按不同歌手风格生成歌词
+训练数据集来自我收集整理的中文歌词数据库: https://github.com/dengxiuqi/ChineseLyrics  
+基于Tensorflow和Bahdanau注意力的另一个项目: https://github.com/dengxiuqi/Lyricist-tensorflow 
 
 #### 方法
 * 核心代码完全代码基于Pytorch 和 torchtext  
@@ -12,6 +14,20 @@
 字里行间都是这位歌手作品的影子, 本项目训练得到了周杰伦、林俊杰、李荣浩、许嵩和陈粒等五位歌手的微调模型  
 * 歌词数据来源于自己爬虫搜集, 在本项目以研究为目的，只选择了有代表性的40位歌手(男女歌手各20位)的作品,
 共7259首歌曲, 详见"data/歌手和歌曲数量.csv"
+
+#### 工程
+Lyricist  
+│── data 数据集   
+│　　│── songs.json 歌词数据   
+│　　\` ── word2vec.txt word2vec数据    
+│── images 对注意力可视化的图片   
+│── model pre_trained和fine-tune模型  
+│── test 用不同模型生成不同风格歌词  
+│── config.py 数据集合网络结构的一些参数  
+│── data.py 数据集处理, 基于torchtext  
+│── finetune.py 微调      
+│── pretrain.py 预训练      
+\` ── utils.py　工具函数  
 
 #### 效果
 ##### 用周杰伦的风格, 以一个句子开头重写《晴天》   
@@ -133,16 +149,3 @@
     对你的欢喜,
     被你推翻了
     
-#### 工程
-Lyricist  
-│── data 数据集   
-│　　│── songs.json 歌词数据   
-│　　\` ── word2vec.txt word2vec数据    
-│── images 对注意力可视化的图片   
-│── model pre_trained和fine-tune模型  
-│── test 用不同模型生成不同风格歌词  
-│── config.py 数据集合网络结构的一些参数  
-│── data.py 数据集处理, 基于torchtext  
-│── finetune.py 微调      
-│── pretrain.py 预训练      
-\` ── utils.py　工具函数  
