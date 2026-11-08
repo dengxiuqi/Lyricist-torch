@@ -33,7 +33,7 @@ def train(dataset, learning_rate, total_epoch, device=None, save_epoch=5, log_st
     model_name = dataset.singer or "pre_trained"    # 如果没有指定某位歌手名, 就加载通用的pre-trained模型
     pre_trained_model = check_pre_trained_model()   # 检查是否有已经训练过的模型
     if pre_trained_model:                           # 如果有, 就加载
-        pre_trained_state_dict = torch.load(FILE_PATH + config.model_path + pre_trained_model)
+        pre_trained_state_dict = torch.load(FILE_PATH + config.model_path + pre_trained_model, weights_only=True)
         state_dict = net.state_dict()
         state_dict.update(pre_trained_state_dict)
         net.load_state_dict(state_dict)
